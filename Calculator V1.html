@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scientific Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+            margin: 0;
+        }
+        .calculator {
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .display {
+            background: #313131;
+            color: #fff;
+            padding: 20px;
+            text-align: right;
+            font-size: 2em;
+            border-bottom: 1px solid #ccc;
+        }
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+        }
+        .button {
+            padding: 20px;
+            text-align: center;
+            background: #ffffff;
+            border: 1px solid #ccc;
+            font-size: 1.5em;
+            cursor: pointer;
+        }
+        .button:hover {
+            background: #f57878a2;
+        }
+        .button.operator {
+            background: #e7e7e7;
+        }
+        .button:hover {
+            background: #f57878a2;
+        }
+            .button.span-4 {
+            grid-column: span 4;
+        }
+        .button.hidden {
+            display: none;
+        }
+        #history {
+            display: none;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #fff;
+            border: 1px solid #ccc;
+            padding: 10px;
+            max-height: 300px;
+            overflow-y: scroll;
+        }
+        .icon {
+            font-size: 1.2em;
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator">
+        <div class="display" id="display">0</div>
+        <div class="buttons">
+            <!-- Common Buttons -->
+            <div class="button operator" id="modeButton" title="สลับโหมด" onclick="toggleMode()">Normal</div>
+            <div class="button operator" title="History" onclick="showHistory()"><span class="icon">⏲</span></div>
+            <div class="button operator" onclick="clearDisplay()">C</div>
+            <div class="button operator" onclick="backspace()">⌫</div>
+            
+
+            <!-- Number Buttons -->
+            <div class="button" onclick="appendToDisplay('7')">7</div>
+            <div class="button" onclick="appendToDisplay('8')">8</div>
+            <div class="button" onclick="appendToDisplay('9')">9</div>
+            <div class="button operator" onclick="appendToDisplay('/')">÷</div>
+
+            <div class="button" onclick="appendToDisplay('4')">4</div>
+            <div class="button" onclick="appendToDisplay('5')">5</div>
+            <div class="button" onclick="appendToDisplay('6')">6</div>
+            <div class="button operator" onclick="appendToDisplay('*')">×</div>
+
+            <div class="button" onclick="appendToDisplay('1')">1</div>
+            <div class="button" onclick="appendToDisplay('2')">2</div>
+            <div class="button" onclick="appendToDisplay('3')">3</div>
+            <div class="button operator" onclick="appendToDisplay('-')">-</div>
+
+            <div class="button" title="คีย์ลัด 'A'" onclick="appendAns()">Ans</div>
+            <div class="button" onclick="appendToDisplay('0')">0</div>
+            <div class="button" onclick="appendToDisplay('.')">.</div>
+            <div class="button operator" onclick="appendToDisplay('+')">+</div>
+            
+            <!-- Angle Mode Buttons -->
+            <div class="button operator hidden" id="degreeButton" title="คีย์ลัด 'Q'" onclick="appendAngleSymbol('°')">°</div>
+            <div class="button operator hidden" id="minuteButton" title="คีย์ลัด 'W'" onclick="appendAngleSymbol('′')">′</div>
+            <div class="button operator hidden" id="secondButton" title="คีย์ลัด 'E'" onclick="appendAngleSymbol('″')">″</div>
+
+            <!-- Equals Button -->
+            <div class="button operator span-4" title="ผลลัพธ์" onclick="calculateResult()">=</div>
+
+            
+        </div>
+    </div>
+    <div id="history">
+        <h3>History</h3>
+        <ul id="history-list"></ul>
+    </div>
+    <script>
+        let lastResult = 0;
+        let mode = 'normal'; // 'normal' or 'angle'
+        let history = [];
+
+        function clearDisplay() {
+            document.getElementById('display').innerText = '0';
+        }
+
+        function backspace() {
+            const display = document.getElementById('display');
+            display.innerText = display.innerText.slice(0, -1) || '0';
+        }
+
+        function appendToDisplay(value) {
+            const display = document.getElementById('display');
+            if (display.innerText === '0' && value !== '.') {
+                display.innerText = value;
+            } else {
+                display.innerText += value;
+            }
+        }
+
+        function appendAngleSymbol(symbol) {
+            const display = document.getElementById('display');
+            const currentText = display.innerText;
+            if (mode === 'angle' && /^[0-9]+$/.test(currentText.slice(-1))) {
+                display.innerText += symbol;
+            }
+        }
+
+        function toggleMode() {
+            mode = mode === 'normal' ? 'angle' : 'normal';
+            document.getElementById('modeButton').innerText = mode === 'normal' ? 'Normal' : 'Angle';
+
+            // Toggle button visibility based on mode
+            const angleButtons = ['degreeButton', 'minuteButton', 'secondButton'];
+            angleButtons.forEach(id => {
+                document.getElementById(id).classList.toggle('hidden', mode === 'normal');
+            });
+
+            // Reset display and operator buttons based on mode
+            const operatorButtons = ['divideButton', 'multiplyButton', 'subtractButton', 'addButton'];
+            operatorButtons.forEach(id => {
+                document.getElementById(id).classList.remove('hidden');
+            });
+
+            clearDisplay();
+        }
+
+        function appendAns() {
+            const display = document.getElementById('display');
+            if (lastResult !== 0) {
+                display.innerText = 'Ans';
+            }
+        }
+
+        function calculateResult() {
+            const display = document.getElementById('display');
+            try {
+                let expression = display.innerText.replace('Ans', lastResult);
+                let result, formattedExpression;
+
+                if (mode === 'angle') {
+                    formattedExpression = convertAngleExpression(expression);
+                    result = eval(formattedExpression);
+                    result = formatAngleResult(result);
+                } else {
+                    result = eval(expression).toFixed(3);
+                }
+
+                lastResult = parseFloat(result);
+
+                // Save history with original and result expression
+                history.push({
+                    original: display.innerText,
+                    result: result,
+                    mode: mode,
+                    expression: expression // Save the original expression
+                });
+
+                display.innerText = result;
+            } catch (e) {
+                display.innerText = 'Error';
+            }
+        }
+
+        function convertAngleExpression(expression) {
+            return expression.replace(/(\d+)°(\d+)?′?(\d+)?″?/g, (match, degrees, minutes, seconds) => {
+                degrees = parseInt(degrees);
+                minutes = minutes ? parseInt(minutes) : 0;
+                seconds = seconds ? parseInt(seconds) : 0;
+                return degrees + minutes / 60 + seconds / 3600;
+            });
+        }
+
+        function formatAngleResult(result) {
+            const degrees = Math.floor(result);
+            const minutesFloat = (result - degrees) * 60;
+            const minutes = Math.floor(minutesFloat);
+            const seconds = Math.round((minutesFloat - minutes) * 60);
+            return `${degrees}°${minutes}′${seconds}″`;
+        }
+
+        function showHistory() {
+            const historyDiv = document.getElementById('history');
+            const historyList = document.getElementById('history-list');
+            historyList.innerHTML = '';
+            history.forEach(entry => {
+                const li = document.createElement('li');
+                li.innerText = `${entry.mode === 'normal' ? 'Normal' : 'Angle'}: ${entry.expression} = ${entry.result}`;
+                li.onclick = () => {
+                    document.getElementById('display').innerText = entry.expression;
+                    if (entry.mode !== mode) {
+                        toggleMode();
+                    }
+                };
+                historyList.appendChild(li);
+            });
+            historyDiv.style.display = historyDiv.style.display === 'none' ? 'block' : 'none';
+        }
+
+        document.addEventListener('keydown', function(event) {
+            const key = event.key;
+            const operators = ['+', '-', '*', '/', '(', ')', '.'];
+            if (key >= '0' && key <= '9') {
+                appendToDisplay(key);
+            } else if (operators.includes(key)) {
+                appendToDisplay(key);
+            } else if (key === 'Enter') {
+                calculateResult();
+            } else if (key === 'Backspace') {
+                backspace();
+            } else if (key === 'Escape') {
+                clearDisplay();
+            } else if (key === 'A' || key === 'a') {
+                appendAns();
+            } else if (key === 'q' || key === 'Q') {
+                appendAngleSymbol('°');
+            } else if (key === 'w' || key === 'W') {
+                appendAngleSymbol("' ");
+            } else if (key === 'e' || key === 'E') {
+                appendAngleSymbol('"');
+            }
+        });
+    </script>
+</body>
+</html>
